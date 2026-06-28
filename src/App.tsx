@@ -4,12 +4,29 @@ import { useQuiz } from './hooks/useQuiz'
 import { ChinaMap } from './components/ChinaMap'
 import { ExplorePanel } from './components/ExplorePanel'
 import { QuizPanel } from './components/QuizPanel'
+import { WallpaperView } from './components/WallpaperView'
 import type { AppMode, ProvinceInfo } from './types'
 
+function isFileProtocol() {
+  return window.location.protocol === 'file:'
+}
+
+function isAppRoute() {
+  if (isFileProtocol()) return false
+  return window.location.hash === '#app'
+}
+
+function isWallpaperRoute() {
+  if (isFileProtocol()) return true
+  return !isAppRoute()
+}
+
 function App() {
+  const [wallpaper, setWallpaper] = useState(isWallpaperRoute)
   const [mode, setMode] = useState<AppMode>('explore')
   const [selected, setSelected] = useState<ProvinceInfo | null>(null)
   const [lastClick, setLastClick] = useState<string | null>(null)
+  const [showCapitals, setShowCapitals] = useState(false)
   const { state: quiz, startQuiz, answer, nextQuestion } = useQuiz()
 
   useEffect(() => {
@@ -18,6 +35,24 @@ function App() {
       setLastClick(null)
     }
   }, [mode])
+
+  useEffect(() => {
+    const onHashChange = () => setWallpaper(isWallpaperRoute())
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [])
+
+  const enterWallpaper = useCallback(() => {
+    if (!isFileProtocol()) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search)
+    }
+    setWallpaper(true)
+  }, [])
+
+  const exitWallpaper = useCallback(() => {
+    if (!isFileProtocol()) window.location.hash = '#app'
+    setWallpaper(false)
+  }, [])
 
   const handleProvinceClick = useCallback(
     (name: string) => {
@@ -33,6 +68,10 @@ function App() {
     },
     [mode, quiz.feedback, quiz.finished, quiz.target, answer],
   )
+
+  if (wallpaper) {
+    return <WallpaperView onExit={exitWallpaper} />
+  }
 
   const mapSelected =
     mode === 'explore'
@@ -51,22 +90,32 @@ function App() {
             <p>熟悉省界 · 认位置练习</p>
           </div>
         </div>
-        <nav className="mode-nav" aria-label="模式切换">
+        <div className="header-actions">
+          <nav className="mode-nav" aria-label="模式切换">
+            <button
+              type="button"
+              className={`mode-btn ${mode === 'explore' ? 'mode-btn--active' : ''}`}
+              onClick={() => setMode('explore')}
+            >
+              探索
+            </button>
+            <button
+              type="button"
+              className={`mode-btn ${mode === 'quiz' ? 'mode-btn--active' : ''}`}
+              onClick={() => setMode('quiz')}
+            >
+              测验
+            </button>
+          </nav>
           <button
             type="button"
-            className={`mode-btn ${mode === 'explore' ? 'mode-btn--active' : ''}`}
-            onClick={() => setMode('explore')}
+            className="wallpaper-btn"
+            onClick={enterWallpaper}
+            title="全屏地图，隐藏界面"
           >
-            探索
+            壁纸
           </button>
-          <button
-            type="button"
-            className={`mode-btn ${mode === 'quiz' ? 'mode-btn--active' : ''}`}
-            onClick={() => setMode('quiz')}
-          >
-            测验
-          </button>
-        </nav>
+        </div>
       </header>
 
       <main className="main">
@@ -77,7 +126,16 @@ function App() {
             selectedName={mapSelected}
             feedback={mode === 'quiz' ? quiz.feedback : 'idle'}
             correctName={mode === 'quiz' ? quiz.correctName : null}
+            showCapitals={showCapitals}
           />
+          <label className="map-toggle">
+            <input
+              type="checkbox"
+              checked={showCapitals}
+              onChange={(e) => setShowCapitals(e.target.checked)}
+            />
+            <span>显示省会</span>
+          </label>
         </section>
         <aside className="side-panel">
           {mode === 'explore' ? (

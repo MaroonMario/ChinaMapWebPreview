@@ -1,0 +1,35 @@
+---
+description: 修改构建/分发相关代码后须验证 release/ 离线页控制台
+alwaysApply: true
+---
+
+# 浏览器控制台验证规则
+
+## 开发 vs 分发
+
+- **日常开发**：`npm run dev`，无需测 `file://` 离线
+- **分发打包**：`npm run pack`（含 `check:offline`），验证 `release/index.html`
+
+## 何时必须验证
+
+- 修改 `vite.config.ts`、打包脚本或影响 `release/` 产物的构建逻辑
+- 修复与离线 `file://`、CORS、白屏相关的 Bug
+
+## 验证命令
+
+```bash
+npm run pack
+```
+
+或已有 `release/` 时：
+
+```bash
+npm run check:offline
+```
+
+## 通过标准
+
+- 控制台无 `error` / `pageerror`
+- `#root` 已挂载，地图 canvas 存在
+
+验证后同步更新 `docs/PROGRESS.md`（见 `update-progress.mdc`）。

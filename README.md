@@ -15,11 +15,16 @@ npm install
 npm run dev
 ```
 
-## 构建
+浏览器访问 `http://localhost:5173` 即可，与常见 Vite 项目相同。
+
+## 拷贝给他人（离线）
 
 ```bash
-npm run build
-npm run preview
+npm run pack
 ```
+
+将生成的 **`release/` 整个文件夹** 拷贝给对方，双击其中的 `index.html` 即可，无需 Node。
+
+> 修改源码后重新 `npm run pack` 再分发。
 
 地图数据来自 [阿里云 DataV GeoJSON](https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json)。
